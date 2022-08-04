@@ -1,0 +1,1 @@
+./snake $(cat rargs.txt)
