@@ -9,3 +9,7 @@ cargs.txt: Stores the arguments necessary for compiling the source.
 
 rargs.txt: Stores arguments to be used when running the program when using run.sh.
 
+# Known issues
+
+When the game starts, random characters will sometimes appear.
+On game end, a double free error (rarely happens).
