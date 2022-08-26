@@ -6,33 +6,26 @@
 #include <ncurses.h>
 
 // The tail count the snake will start with
-#define STARTING_LENGTH 3
+#define STARTING_LENGTH 5
 
 // The starting speed (each loop will delay by 1000 / speed millis)
 #define STARTING_SPEED 3
-
-enum direction {
-	UP,
-	DOWN,
-	LEFT,
-	RIGHT
-} typedef direction;
-
-struct head {
-	int x;
-	int y;
-	direction d;
-} typedef head;
 
 struct segment {
 	int x;
 	int y;
 } typedef segment;
 
+struct head {
+	int x;
+	int y;
+	segment movementvector;
+} typedef head;
+
 struct snake {
 	head h;
 	// The extra space is for the clearing segment
-	segment t[STARTING_LENGTH + 1];
+	segment* t;
 	int tc;
 } typedef snake;
 
@@ -79,20 +72,8 @@ void movesnake() {
 	}
 	s.t[0].x = s.h.x;
 	s.t[0].y = s.h.y;
-	switch (s.h.d) {
-		case UP:
-			s.h.y -= 1;
-			break;
-		case DOWN:
-			s.h.y += 1;
-			break;
-		case LEFT:
-			s.h.x -= 1;
-			break;
-		case RIGHT:
-			s.h.x += 1;
-			break;
-	}
+	s.h.x += s.h.movementvector.x;
+	s.h.y += s.h.movementvector.y;
 	if (s.h.y >= height) {
 		s.h.y = 0;
 	} else if (s.h.y < 0) {
@@ -108,6 +89,27 @@ void movesnake() {
 void rendersnake() {
 	drawsquare(s.t[s.tc].y, s.t[s.tc].x, 0);
 	drawsquare(s.h.y, s.h.x, 1);
+}
+
+// Checks if the snake
+// collided into itself (returns 1), the
+// apple (returns 2), or nothing (returns 0).
+int checkforcollision() {
+	if (a.x == s.h.x && a.y == s.h.y) {
+		return 2;
+	}
+	for (int i = 0; i < s.tc; i++) {
+		if (s.t[i].x == s.h.x && s.t[i].y == s.h.y) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+// Extends the snake's tail by one segment
+void addtailsegment() {
+	s.tc++;
+	s.t = realloc(s.t, sizeof(segment) * s.tc + 2);
 }
 
 void moveapple() {
@@ -141,49 +143,6 @@ void* handlekeys() {
 	pthread_exit(NULL);
 }
 
-void* gameloop() {
-	clearwindow();
-	for (int i = 0; i < s.tc; i++) {
-		drawsquare(s.t[i].y, s.t[i].x, 1);
-	}
-	while (isrunning) {
-		rendersnake();
-		renderapple();
-		movesnake();
-		refresh();
-		// Delay for 1000 / speed millis
-		clock_t start = clock();
-		while (((double) (clock() - start) / CLOCKS_PER_SEC) * 1000.0 < (1000 / speed) && isrunning);
-		switch (lastkey) {
-			case KEY_UP:
-				if (s.h.d != DOWN) {
-					s.h.d = UP;
-				}
-				break;
-			case KEY_DOWN:
-				if (s.h.d != UP) {
-					s.h.d = DOWN;
-				}
-				break;
-			case KEY_LEFT:
-				if (s.h.d != RIGHT) {
-					s.h.d = LEFT;
-				}
-				break;
-			case KEY_RIGHT:
-				if (s.h.d != LEFT) {
-					s.h.d = RIGHT;
-				}
-				break;
-			case 27: // Escape key
-				isrunning = 0;
-				break;
-		}
-		lastkey = 0;
-	}
-	pthread_exit(NULL);
-}
-
 int main(int argc, char* argv[]) {
 	srand(time(NULL));
 	WINDOW* w;
@@ -203,28 +162,75 @@ int main(int argc, char* argv[]) {
 	// Init snake and apple
 	s.h.x = width / 2;
 	s.h.y = height / 2;
-	s.h.d = RIGHT;
+	s.h.movementvector.x = 1;
+	s.h.movementvector.y = 0;
 	s.tc = 0;
+	s.t = malloc(sizeof(segment) * STARTING_LENGTH + 1);
 	for (int i = 0; i < STARTING_LENGTH + 1; i++) {
-		s.t[i].x = (s.h.d != LEFT) ? (s.h.x - 1 - i) : (s.h.x + 1 + i);
+		s.t[i].x = s.h.x - 1 - i;
 		s.t[i].y = s.h.y;
 		s.tc++;
 	}
 	s.tc--;
 	moveapple();
 	// Run threads
-	pthread_t key, loop;
+	clearwindow();
+	for (int i = 0; i < s.tc; i++) {
+		drawsquare(s.t[i].y, s.t[i].x, 1);
+	}
+	pthread_t key;
 	if (pthread_create(&key, NULL, &handlekeys, NULL) != 0) {
 		return 1;
 	}
-	if (pthread_create(&loop, NULL, &gameloop, NULL) != 0) {
+	while (isrunning) {
+		rendersnake();
+		renderapple();
+		movesnake();
+		refresh();
+		// Delay for 1000 / speed millis
+		clock_t start = clock();
+		while (((double) (clock() - start) / CLOCKS_PER_SEC) * 1000.0 < (1000 / speed) && isrunning);
+		switch (lastkey) {
+			case KEY_UP:
+				if (s.h.movementvector.y != 1) {
+					s.h.movementvector.y = -1;
+					s.h.movementvector.x = 0;
+				}
+				break;
+			case KEY_DOWN:
+				if (s.h.movementvector.y != -1) {
+					s.h.movementvector.y = 1;
+					s.h.movementvector.x = 0;
+				}
+				break;
+			case KEY_LEFT:
+				if (s.h.movementvector.x != 1) {
+					s.h.movementvector.x = -1;
+					s.h.movementvector.y = 0;
+				}
+				break;
+			case KEY_RIGHT:
+				if (s.h.movementvector.x != -1) {
+					s.h.movementvector.x = 1;
+					s.h.movementvector.y = 0;
+				}
+				break;
+			case 27: // Escape key
+				isrunning = 0;
+				break;
+		}
+		int collision = checkforcollision();
+		if (collision == 1) {
+			break;
+		} else if (collision == 2) {
+			addtailsegment();
+			moveapple();
+			speed++;
+		}
+		lastkey = 0;
+	}
+	if (pthread_cancel(key)) {
 		return 2;
-	}
-	if (pthread_join(key, NULL)) {
-		return 3;
-	}
-	if (pthread_join(loop, NULL)) {
-		return 4;
 	}
 	curs_set(mode);
 	endwin();
