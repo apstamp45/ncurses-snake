@@ -8,8 +8,7 @@
 // The tail count the snake will start with
 #define STARTING_LENGTH 2
 
-// The starting speed (each loop will delay by 1000 / speed millis)
-#define STARTING_SPEED 3
+#define STARTING_SPEED 4
 
 struct segment {
 	int x;
@@ -24,7 +23,6 @@ struct head {
 
 struct snake {
 	head h;
-	// The extra space is for the clearing segment
 	segment* t;
 	int tc;
 } typedef snake;
@@ -112,15 +110,12 @@ void addtailsegment() {
 	s.t = realloc(s.t, sizeof(segment) * s.tc + 2);
 }
 
-//TODO Fix bug: apple can spawn on snake's tail
 void moveapple() {
 	int x, y;
 	x = randinrange(0, width - 1);
 	y = randinrange(0, height - 1);
 	for (int i = 0; i <= s.tc; i++) {
-		if (s.t[i].x != x || s.t[i].y != y) {
-			break;
-		} else {
+		if (s.t[i].x == x || s.t[i].y == y) {
 			i = 0;
 			x = randinrange(0, width - 1);
 			y = randinrange(0, height - 1);
