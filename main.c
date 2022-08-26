@@ -6,7 +6,7 @@
 #include <ncurses.h>
 
 // The tail count the snake will start with
-#define STARTING_LENGTH 5
+#define STARTING_LENGTH 2
 
 // The starting speed (each loop will delay by 1000 / speed millis)
 #define STARTING_SPEED 3
@@ -112,6 +112,7 @@ void addtailsegment() {
 	s.t = realloc(s.t, sizeof(segment) * s.tc + 2);
 }
 
+//TODO Fix bug: apple can spawn on snake's tail
 void moveapple() {
 	int x, y;
 	x = randinrange(0, width - 1);
@@ -173,8 +174,6 @@ int main(int argc, char* argv[]) {
 	}
 	s.tc--;
 	moveapple();
-	// Run threads
-	clearwindow();
 	for (int i = 0; i < s.tc; i++) {
 		drawsquare(s.t[i].y, s.t[i].x, 1);
 	}
@@ -187,9 +186,10 @@ int main(int argc, char* argv[]) {
 		renderapple();
 		movesnake();
 		refresh();
-		// Delay for 1000 / speed millis
+		// Delay for 3000 / (speed + 3) millis
 		clock_t start = clock();
-		while (((double) (clock() - start) / CLOCKS_PER_SEC) * 1000.0 < (1000 / speed) && isrunning);
+		int delay = 3000 / (speed + 3);
+		while (((double) (clock() - start) / CLOCKS_PER_SEC) * 1000.0 < delay && isrunning);
 		switch (lastkey) {
 			case KEY_UP:
 				if (s.h.movementvector.y != 1) {
@@ -234,5 +234,7 @@ int main(int argc, char* argv[]) {
 	}
 	curs_set(mode);
 	endwin();
+	//TODO Make better end screen
+	printf("Score: %d\n", s.tc - STARTING_LENGTH);
 	return 0;
 }
