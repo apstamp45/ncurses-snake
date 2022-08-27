@@ -7,8 +7,9 @@
 
 // The tail count the snake will start with
 #define STARTING_LENGTH 2
-
 #define STARTING_SPEED 4
+#define WINDOW_WIDTH 20
+#define WINDOW_HEIGHT 20
 
 struct segment {
 	int x;
@@ -35,8 +36,8 @@ struct apple {
 bool isrunning;
 int lastkey;
 int speed;
-int width;
-int height;
+int starty;
+int startx;
 snake s;
 apple a;
 
@@ -52,15 +53,9 @@ int constrain(int num, int min, int max) {
 
 void drawsquare(int y, int x, int colorpair) {
 	attron(COLOR_PAIR(colorpair));
-	mvaddch(constrain(y, 0, height), constrain(x, 0, width) * 2, ' ');
+	mvaddch(constrain(y, -starty, WINDOW_HEIGHT + starty) + starty, constrain(x, -startx, WINDOW_WIDTH + startx) * 2 + startx * 2, ' ');
 	addch(' ');
 	attroff(COLOR_PAIR(colorpair));
-}
-
-void clearwindow() {
-	for (int i = 0; i < width * height; i++) {
-		addch(' ');
-	}
 }
 
 void movesnake() {
@@ -72,15 +67,15 @@ void movesnake() {
 	s.t[0].y = s.h.y;
 	s.h.x += s.h.movementvector.x;
 	s.h.y += s.h.movementvector.y;
-	if (s.h.y >= height) {
+	if (s.h.y >= WINDOW_HEIGHT) {
 		s.h.y = 0;
 	} else if (s.h.y < 0) {
-		s.h.y = height - 1;
+		s.h.y = WINDOW_HEIGHT - 1;
 	}
-	if (s.h.x >= width) {
+	if (s.h.x >= WINDOW_WIDTH) {
 		s.h.x = 0;
 	} else if (s.h.x < 0) {
-		s.h.x = width - 1;
+		s.h.x = WINDOW_WIDTH - 1;
 	}
 }
 
@@ -112,13 +107,13 @@ void addtailsegment() {
 
 void moveapple() {
 	int x, y;
-	x = randinrange(0, width - 1);
-	y = randinrange(0, height - 1);
+	x = randinrange(0, WINDOW_WIDTH - 1);
+	y = randinrange(0, WINDOW_HEIGHT - 1);
 	for (int i = 0; i <= s.tc; i++) {
 		if (s.t[i].x == x || s.t[i].y == y) {
 			i = 0;
-			x = randinrange(0, width - 1);
-			y = randinrange(0, height - 1);
+			x = randinrange(0, WINDOW_WIDTH - 1);
+			y = randinrange(0, WINDOW_HEIGHT - 1);
 		}
 	}
 	a.x = x;
@@ -141,11 +136,10 @@ void* handlekeys() {
 
 int main(int argc, char* argv[]) {
 	srand(time(NULL));
-	WINDOW* w;
 	isrunning = 1;
 	speed = STARTING_SPEED;
 	// Init window
-	w = initscr();
+	WINDOW* w = initscr();
 	noecho();
 	int mode = curs_set(0);
 	cbreak();
@@ -153,11 +147,18 @@ int main(int argc, char* argv[]) {
 	start_color();
 	init_pair(1, COLOR_GREEN, COLOR_GREEN);
 	init_pair(2, COLOR_RED, COLOR_RED);
-	height = getmaxy(w);
-	width = getmaxx(w) / 2;
+	init_pair(3, COLOR_WHITE, COLOR_WHITE);
+	starty = (getmaxy(w) - WINDOW_HEIGHT) / 2;
+	startx = (getmaxx(w) / 2 - WINDOW_WIDTH) / 2;
+	if (getmaxy(w) < WINDOW_HEIGHT || getmaxx(w) / 2 < WINDOW_WIDTH) {
+		curs_set(mode);
+		endwin();
+		printf("Terminal size is too small.\nResize to at least %d rows by %d columns.\n", WINDOW_HEIGHT, WINDOW_WIDTH);
+		return 0;
+	}
 	// Init snake and apple
-	s.h.x = width / 2;
-	s.h.y = height / 2;
+	s.h.x = WINDOW_WIDTH / 2;
+	s.h.y = WINDOW_HEIGHT / 2;
 	s.h.movementvector.x = 1;
 	s.h.movementvector.y = 0;
 	s.tc = 0;
@@ -172,6 +173,17 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < s.tc; i++) {
 		drawsquare(s.t[i].y, s.t[i].x, 1);
 	}
+	// Draw border
+	int i;
+	for (i = -1; i < WINDOW_WIDTH + 1; i++) {
+		drawsquare(-1, i, 3);
+		drawsquare(WINDOW_HEIGHT, i, 3);
+	}
+	for (i = 0; i < WINDOW_HEIGHT; i++) {
+		drawsquare(i, -1, 3);
+		drawsquare(i, WINDOW_WIDTH, 3);
+	}
+	// Start key handler
 	pthread_t key;
 	if (pthread_create(&key, NULL, &handlekeys, NULL) != 0) {
 		return 1;
