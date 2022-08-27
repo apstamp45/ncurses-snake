@@ -198,24 +198,28 @@ int main(int argc, char* argv[]) {
 		int delay = 3000 / (speed + 3);
 		while (((double) (clock() - start) / CLOCKS_PER_SEC) * 1000.0 < delay && isrunning);
 		switch (lastkey) {
+			case 107: // K
 			case KEY_UP:
 				if (s.h.movementvector.y != 1) {
 					s.h.movementvector.y = -1;
 					s.h.movementvector.x = 0;
 				}
 				break;
+			case 106: // J
 			case KEY_DOWN:
 				if (s.h.movementvector.y != -1) {
 					s.h.movementvector.y = 1;
 					s.h.movementvector.x = 0;
 				}
 				break;
+			case 104: // H
 			case KEY_LEFT:
 				if (s.h.movementvector.x != 1) {
 					s.h.movementvector.x = -1;
 					s.h.movementvector.y = 0;
 				}
 				break;
+			case 108: // L
 			case KEY_RIGHT:
 				if (s.h.movementvector.x != -1) {
 					s.h.movementvector.x = 1;
@@ -241,7 +245,6 @@ int main(int argc, char* argv[]) {
 	}
 	curs_set(mode);
 	endwin();
-	//TODO Make better end screen
 	printf("Score: %d\n", s.tc - STARTING_LENGTH);
 	return 0;
 }
