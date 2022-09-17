@@ -6,10 +6,11 @@
 #include <ncurses.h>
 
 // The length of tail the snake will start with
-#define STARTING_LENGTH 2
+#define STARTING_LENGTH 3
 #define STARTING_SPEED 4
 #define WINDOW_WIDTH 20
 #define WINDOW_HEIGHT 20
+#define HIGHSCORE_FILE "./ncsnake_highscore"
 
 struct segment {
 	int x;
@@ -48,9 +49,10 @@ int constrain(int num, int min, int max) {
 }
 
 void drawsquare(int y, int x, int colorpair) {
-	attron(COLOR_PAIR(colorpair));
-	mvprintw(constrain(y, -starty, WINDOW_HEIGHT + starty) + starty, constrain(x, -startx, WINDOW_WIDTH + startx) * 2 + startx * 2, "  ");
-	attroff(COLOR_PAIR(colorpair));
+	mvaddch(constrain(y, -starty, WINDOW_HEIGHT + starty) + starty,
+			constrain(x, -startx, WINDOW_WIDTH + startx) * 2 + startx * 2,
+			' ' | COLOR_PAIR(colorpair));
+	addch(' ' | COLOR_PAIR(colorpair));
 }
 
 void movesnake() {
@@ -180,6 +182,7 @@ int main(int argc, char* argv[]) {
 	if (pthread_create(&key, NULL, &handlekeys, NULL) != 0) {
 		return 1;
 	}
+	mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
 	while (isrunning) {
 		int collision = checkforcollision();
 		if (collision == 1) {
@@ -228,16 +231,16 @@ int main(int argc, char* argv[]) {
 			case 27: // Escape key
 				isrunning = 0;
 				break;
-			case 32: // Space key
-				addtailsegment();
-				moveapple();
-				speed++;
-				mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
+			/*case 32: // Space key*/
+				/*addtailsegment();*/
+				/*moveapple();*/
+				/*speed++;*/
+				/*mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);*/
 			case 0: // Nothing
 				break;
-			default:
-				mvprintw(starty + WINDOW_HEIGHT, 0, "%d", lastkey);
-				break;
+			/*default:*/
+				/*mvprintw(starty + WINDOW_HEIGHT, 0, "%d", lastkey);*/
+				/*break;*/
 		}
 		movesnake();
 		lastkey = 0;
@@ -247,6 +250,23 @@ int main(int argc, char* argv[]) {
 	}
 	curs_set(mode);
 	endwin();
-	printf("Score: %d\n", s.tc - STARTING_LENGTH);
+	FILE* file = fopen(HIGHSCORE_FILE, "r");
+	if (file == NULL) {
+		printf("Error opening highscore file\n");
+	}
+	int hs = getw(file);
+	int score = s.tc - STARTING_LENGTH;
+	if (score > hs) {
+		fclose(file);
+		file = fopen(HIGHSCORE_FILE, "w");
+		if (file == NULL) {
+			printf("Error opening high score file\n");
+		}
+		putw(score, file);
+		printf("High score! The score is %d\n", score);
+	} else {
+		printf("Score: %d | High score is %d\n", score, hs);
+	}
+	fclose(file);
 	return 0;
 }
