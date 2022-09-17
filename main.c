@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <ncurses.h>
 
-// The tail count the snake will start with
+// The length of tail the snake will start with
 #define STARTING_LENGTH 2
 #define STARTING_SPEED 4
 #define WINDOW_WIDTH 20
@@ -41,10 +41,6 @@ int startx;
 snake s;
 apple a;
 
-int randinrange(int min, int max) {
-	return rand() % (max + 1 - min) + min;
-}
-
 // Returns num if min <= x < max,
 // else min if x < min, or max - 1 if x >= max
 int constrain(int num, int min, int max) {
@@ -53,8 +49,7 @@ int constrain(int num, int min, int max) {
 
 void drawsquare(int y, int x, int colorpair) {
 	attron(COLOR_PAIR(colorpair));
-	mvaddch(constrain(y, -starty, WINDOW_HEIGHT + starty) + starty, constrain(x, -startx, WINDOW_WIDTH + startx) * 2 + startx * 2, ' ');
-	addch(' ');
+	mvprintw(constrain(y, -starty, WINDOW_HEIGHT + starty) + starty, constrain(x, -startx, WINDOW_WIDTH + startx) * 2 + startx * 2, "  ");
 	attroff(COLOR_PAIR(colorpair));
 }
 
@@ -102,25 +97,22 @@ int checkforcollision() {
 // Extends the snake's tail by one segment
 void addtailsegment() {
 	s.tc++;
-	s.t = realloc(s.t, sizeof(segment) * s.tc + 2);
+	s.t = realloc(s.t, sizeof(segment) * s.tc + 1);
 }
 
 void moveapple() {
 	int x, y;
-	x = randinrange(0, WINDOW_WIDTH - 1);
-	y = randinrange(0, WINDOW_HEIGHT - 1);
-	for (int i = 0; i <= s.tc; i++) {
+	x = rand() % WINDOW_WIDTH;
+	y = rand() % WINDOW_HEIGHT;
+	for (int i = 0; i < s.tc; i++) {
 		if (s.t[i].x == x || s.t[i].y == y) {
 			i = 0;
-			x = randinrange(0, WINDOW_WIDTH - 1);
-			y = randinrange(0, WINDOW_HEIGHT - 1);
+			x = rand() % WINDOW_WIDTH;
+			y = rand() % WINDOW_HEIGHT;
 		}
 	}
 	a.x = x;
 	a.y = y;
-}
-
-void renderapple() {
 	drawsquare(a.y, a.x, 2);
 }
 
@@ -189,9 +181,16 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	while (isrunning) {
+		int collision = checkforcollision();
+		if (collision == 1) {
+			break;
+		} else if (collision == 2) {
+			addtailsegment();
+			moveapple();
+			speed++;
+			mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
+		}
 		rendersnake();
-		renderapple();
-		movesnake();
 		refresh();
 		// Delay for 3000 / (speed + 3) millis
 		clock_t start = clock();
@@ -229,15 +228,18 @@ int main(int argc, char* argv[]) {
 			case 27: // Escape key
 				isrunning = 0;
 				break;
+			case 32: // Space key
+				addtailsegment();
+				moveapple();
+				speed++;
+				mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
+			case 0: // Nothing
+				break;
+			default:
+				mvprintw(starty + WINDOW_HEIGHT, 0, "%d", lastkey);
+				break;
 		}
-		int collision = checkforcollision();
-		if (collision == 1) {
-			break;
-		} else if (collision == 2) {
-			addtailsegment();
-			moveapple();
-			speed++;
-		}
+		movesnake();
 		lastkey = 0;
 	}
 	if (pthread_cancel(key)) {
