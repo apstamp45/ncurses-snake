@@ -1,3 +1,4 @@
+![Screenshot](image.png)
 # Ncurses Snake
 
 The classic game "Snake" written in C using the ncurses library.
