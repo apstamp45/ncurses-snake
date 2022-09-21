@@ -8,9 +8,12 @@
 // The length of tail the snake will start with
 #define STARTING_LENGTH 3
 #define STARTING_SPEED 4
-#define WINDOW_WIDTH 20
 #define WINDOW_HEIGHT 20
+#define WINDOW_WIDTH 20
 #define HIGHSCORE_FILE "./ncsnake_highscore"
+#define TITLE_FILE "./title.ascic"
+#define TITLE_HEIGHT 6
+#define TITLE_WIDTH 26
 
 struct segment {
 	int x;
@@ -53,6 +56,23 @@ void drawsquare(int y, int x, int colorpair) {
 			constrain(x, -startx, WINDOW_WIDTH + startx) * 2 + startx * 2,
 			' ' | COLOR_PAIR(colorpair));
 	addch(' ' | COLOR_PAIR(colorpair));
+}
+
+void drawascii(char* image, int y, int x) {
+	int j = 0;
+	mvaddch(y, x, image[0]);
+	for (int i = 1; image[i] != '\0'; i++) {
+		if (image[i] == '\n') {
+			i++;
+			if (image[i] == '\0') {
+				break;
+			}
+			j++;
+			mvaddch(y + j, x, image[i]);
+		} else {
+			addch(image[i]);
+		}
+	}
 }
 
 void movesnake() {
@@ -142,7 +162,12 @@ int main(int argc, char* argv[]) {
 	init_pair(1, COLOR_GREEN, COLOR_GREEN);
 	init_pair(2, COLOR_RED, COLOR_RED);
 	init_pair(3, COLOR_WHITE, COLOR_WHITE);
-	starty = (getmaxy(w) - WINDOW_HEIGHT) / 2;
+	int maxy = getmaxy(w);
+	if (maxy >= WINDOW_HEIGHT + TITLE_HEIGHT + 3) {
+		starty = (maxy - WINDOW_HEIGHT + TITLE_HEIGHT + 1) / 2;
+	} else {
+		starty = (maxy - WINDOW_HEIGHT) / 2;
+	}
 	startx = (getmaxx(w) / 2 - WINDOW_WIDTH) / 2;
 	if (getmaxy(w) < WINDOW_HEIGHT || getmaxx(w) / 2 < WINDOW_WIDTH) {
 		curs_set(mode);
@@ -176,6 +201,24 @@ int main(int argc, char* argv[]) {
 	for (i = 0; i < WINDOW_HEIGHT; i++) {
 		drawsquare(i, -1, 3);
 		drawsquare(i, WINDOW_WIDTH, 3);
+	}
+	// Draw title
+	char* title = 0;
+	long length;
+	FILE* titlefile = fopen(TITLE_FILE, "rb");
+	if (titlefile) {
+		fseek(titlefile, 0, SEEK_END);
+		length = ftell(titlefile);
+		fseek(titlefile, 0, SEEK_SET);
+		title = malloc(length);
+		if (title) {
+			fread(title, 1, length, titlefile);
+		}
+		fclose(titlefile);
+	}
+	if (title && maxy >= WINDOW_HEIGHT + TITLE_HEIGHT + 3) {
+		drawascii(title, starty - TITLE_HEIGHT - 2,
+				  startx * 2 + ((WINDOW_WIDTH * 2 - TITLE_WIDTH) / 2));
 	}
 	// Start key handler
 	pthread_t key;

@@ -12,4 +12,4 @@ rargs.txt: Stores arguments to be used when running the program when using run.s
 # Known issues
 
 When the game starts, random characters will sometimes appear.
-The game will sometimes freeze when trying to eat an apple. SOLVED(?)
+The game will sometimes freeze when trying to eat an apple.
