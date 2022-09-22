@@ -6,11 +6,10 @@ The classic game "Snake" written in C using the ncurses library.
 
 # Files
 
-cargs.txt: Stores the arguments necessary for compiling the source.
+cargs.txt: Stores compile time arguments.
 
-rargs.txt: Stores arguments to be used when running the program when using run.sh.
+rargs.txt: Stores runtime arguments.
 
 # Known issues
 
 When the game starts, random characters will sometimes appear.
-The game will sometimes freeze when trying to eat an apple.

@@ -23,7 +23,7 @@ struct segment {
 struct head {
 	int x;
 	int y;
-	segment movementvector;
+	segment movementvector; // For storing the snake's direction
 } typedef head;
 
 struct snake {
@@ -76,14 +76,18 @@ void drawascii(char* image, int y, int x) {
 }
 
 void movesnake() {
+	// Set every segment to the one at next index
 	for (int i = s.tc; i > 0; i--) {
 		s.t[i].x = s.t[i - 1].x;
 		s.t[i].y = s.t[i - 1].y;
 	}
+	// The last segment gets the head's coords
 	s.t[0].x = s.h.x;
 	s.t[0].y = s.h.y;
+	// Shift the head's position
 	s.h.x += s.h.movementvector.x;
 	s.h.y += s.h.movementvector.y;
+	// Warp the head if out of bounds
 	if (s.h.y >= WINDOW_HEIGHT) {
 		s.h.y = 0;
 	} else if (s.h.y < 0) {
@@ -119,15 +123,20 @@ int checkforcollision() {
 // Extends the snake's tail by one segment
 void addtailsegment() {
 	s.tc++;
-	s.t = realloc(s.t, sizeof(segment) * s.tc + 1);
+	s.t = realloc(s.t, sizeof(segment) * (s.tc + 1));
+	// Make sure the added segment doesn't affect rendering
+	s.t[s.tc].x = s.h.x;
+	s.t[s.tc].y = s.h.y;
 }
 
 void moveapple() {
 	int x, y;
 	x = rand() % WINDOW_WIDTH;
 	y = rand() % WINDOW_HEIGHT;
+	// Check that the apple doesn't collide with snake
 	for (int i = 0; i < s.tc; i++) {
-		if (s.t[i].x == x || s.t[i].y == y) {
+		if ((s.t[i].x == x && s.t[i].y == y) ||
+				(s.h.x == x && s.h.y == y)) {
 			i = 0;
 			x = rand() % WINDOW_WIDTH;
 			y = rand() % WINDOW_HEIGHT;
@@ -141,7 +150,7 @@ void moveapple() {
 void* handlekeys() {
 	while (isrunning) {
 		lastkey = getch();
-		if (lastkey == 27) {
+		if (lastkey == 113) {
 			break;
 		}
 	}
@@ -162,6 +171,7 @@ int main(int argc, char* argv[]) {
 	init_pair(1, COLOR_GREEN, COLOR_GREEN);
 	init_pair(2, COLOR_RED, COLOR_RED);
 	init_pair(3, COLOR_WHITE, COLOR_WHITE);
+	// Init snake window
 	int maxy = getmaxy(w);
 	if (maxy >= WINDOW_HEIGHT + TITLE_HEIGHT + 3) {
 		starty = (maxy - WINDOW_HEIGHT + TITLE_HEIGHT + 1) / 2;
@@ -181,7 +191,7 @@ int main(int argc, char* argv[]) {
 	s.h.movementvector.x = 1;
 	s.h.movementvector.y = 0;
 	s.tc = 0;
-	s.t = malloc(sizeof(segment) * STARTING_LENGTH + 1);
+	s.t = malloc(sizeof(segment) * (STARTING_LENGTH + 1));
 	for (int i = 0; i < STARTING_LENGTH + 1; i++) {
 		s.t[i].x = s.h.x - 1 - i;
 		s.t[i].y = s.h.y;
@@ -203,6 +213,7 @@ int main(int argc, char* argv[]) {
 		drawsquare(i, WINDOW_WIDTH, 3);
 	}
 	// Draw title
+	// TODO title does not need to be stored in file
 	char* title = 0;
 	long length;
 	FILE* titlefile = fopen(TITLE_FILE, "rb");
@@ -228,9 +239,9 @@ int main(int argc, char* argv[]) {
 	mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
 	while (isrunning) {
 		int collision = checkforcollision();
-		if (collision == 1) {
+		if (collision == 1) {// If the snake crashes into itself
 			break;
-		} else if (collision == 2) {
+		} else if (collision == 2) { // If the snake crashes into the apple
 			addtailsegment();
 			moveapple();
 			speed++;
@@ -271,39 +282,33 @@ int main(int argc, char* argv[]) {
 					s.h.movementvector.y = 0;
 				}
 				break;
-			case 27: // Escape key
+			case 113: // Q
 				isrunning = 0;
 				break;
-			/*case 32: // Space key*/
-				/*addtailsegment();*/
-				/*moveapple();*/
-				/*speed++;*/
-				/*mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);*/
 			case 0: // Nothing
 				break;
-			/*default:*/
-				/*mvprintw(starty + WINDOW_HEIGHT, 0, "%d", lastkey);*/
-				/*break;*/
 		}
 		movesnake();
 		lastkey = 0;
 	}
-	if (pthread_cancel(key)) {
-		return 2;
-	}
 	curs_set(mode);
 	endwin();
+	if (pthread_cancel(key)) {
+		printf("Error closing key handler thread");
+		return 1;
+	}
+	int score = s.tc - STARTING_LENGTH;
 	FILE* file = fopen(HIGHSCORE_FILE, "r");
 	if (file == NULL) {
-		printf("Error opening highscore file\n");
+		printf("Error opening highscore file\nYour score was %d\n", score);
+		return 1;
 	}
 	int hs = getw(file);
-	int score = s.tc - STARTING_LENGTH;
 	if (score > hs) {
 		fclose(file);
 		file = fopen(HIGHSCORE_FILE, "w");
 		if (file == NULL) {
-			printf("Error opening high score file\n");
+			printf("Error opening high score file for writing.\n");
 		}
 		putw(score, file);
 		printf("High score! The score is %d\n", score);
@@ -311,5 +316,6 @@ int main(int argc, char* argv[]) {
 		printf("Score: %d | High score is %d\n", score, hs);
 	}
 	fclose(file);
+	free(s.t);
 	return 0;
 }
