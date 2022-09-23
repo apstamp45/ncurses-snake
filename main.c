@@ -11,7 +11,7 @@
 #define WINDOW_HEIGHT 20
 #define WINDOW_WIDTH 20
 #define HIGHSCORE_FILE "./ncsnake_highscore"
-#define TITLE_FILE "./title.ascic"
+#define TITLE " ___\n/   \\            |\n|       __  ___  |     __\n \\-\\  |/  \\  __\\ | /  /__\\\n    | |   | /  | |/\\  |\n\\___/ |   | \\__| |  \\ \\__/\n"
 #define TITLE_HEIGHT 6
 #define TITLE_WIDTH 26
 
@@ -213,22 +213,8 @@ int main(int argc, char* argv[]) {
 		drawsquare(i, WINDOW_WIDTH, 3);
 	}
 	// Draw title
-	// TODO title does not need to be stored in file
-	char* title = 0;
-	long length;
-	FILE* titlefile = fopen(TITLE_FILE, "rb");
-	if (titlefile) {
-		fseek(titlefile, 0, SEEK_END);
-		length = ftell(titlefile);
-		fseek(titlefile, 0, SEEK_SET);
-		title = malloc(length);
-		if (title) {
-			fread(title, 1, length, titlefile);
-		}
-		fclose(titlefile);
-	}
-	if (title && maxy >= WINDOW_HEIGHT + TITLE_HEIGHT + 3) {
-		drawascii(title, starty - TITLE_HEIGHT - 2,
+	if (maxy >= WINDOW_HEIGHT + TITLE_HEIGHT + 3) {
+		drawascii(TITLE, starty - TITLE_HEIGHT - 2,
 				  startx * 2 + ((WINDOW_WIDTH * 2 - TITLE_WIDTH) / 2));
 	}
 	// Start key handler
@@ -311,7 +297,7 @@ int main(int argc, char* argv[]) {
 			printf("Error opening high score file for writing.\n");
 		}
 		putw(score, file);
-		printf("High score! The score is %d\n", score);
+		printf("%d! New high score!\n", score);
 	} else {
 		printf("Score: %d | High score is %d\n", score, hs);
 	}
