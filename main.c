@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -10,7 +11,7 @@
 #define STARTING_SPEED 4
 #define WINDOW_HEIGHT 20
 #define WINDOW_WIDTH 20
-#define HIGHSCORE_FILE "./ncsnake_highscore"
+#define HIGHSCORE_FILE "ncsnake_highscore"
 #define TITLE " ___\n/   \\            |\n|       __  ___  |     __\n \\-\\  |/  \\  __\\ | /  /__\\\n    | |   | /  | |/\\  |\n\\___/ |   | \\__| |  \\ \\__/\n"
 #define TITLE_HEIGHT 6
 #define TITLE_WIDTH 26
@@ -283,23 +284,37 @@ int main(int argc, char* argv[]) {
 		printf("Error closing key handler thread");
 		return 1;
 	}
+	// Get relative path of executable
+	char path[256];
+	readlink("/proc/self/exe", path, 256);// Get path of executable
+	i = 0;
+	for (int add = 1; true; i += add) {// Get index of last '/' char
+		if (path[i] == '\0') {
+			add = -1;
+		}
+		if (add == -1 && path[i] == '/') {
+			break;
+		}
+	}
+	path[i + 1] = '\0';// Terminate the string after the '/'
+	// Check high score, and update if needed
 	int score = s.tc - STARTING_LENGTH;
-	FILE* file = fopen(HIGHSCORE_FILE, "r");
+	FILE* file = fopen(strcat(path, HIGHSCORE_FILE), "r");
 	if (file == NULL) {
 		printf("Error opening highscore file\nYour score was %d\n", score);
 		return 1;
 	}
 	int hs = getw(file);
-	if (score > hs) {
+	if (score > hs) {// Write the new score to the file if is new high score
 		fclose(file);
-		file = fopen(HIGHSCORE_FILE, "w");
+		file = fopen(strcat(path, HIGHSCORE_FILE), "w");
 		if (file == NULL) {
 			printf("Error opening high score file for writing.\n");
 		}
 		putw(score, file);
 		printf("%d! New high score!\n", score);
 	} else {
-		printf("Score: %d | High score is %d\n", score, hs);
+		printf("Score: %d | The high score is %d\n", score, hs);
 	}
 	fclose(file);
 	free(s.t);
