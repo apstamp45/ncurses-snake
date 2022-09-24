@@ -300,6 +300,7 @@ int main(int argc, char* argv[]) {
 	// Check high score, and update if needed
 	int score = s.tc - STARTING_LENGTH;
 	FILE* file = fopen(strcat(path, HIGHSCORE_FILE), "r");
+	printf("%s", path);
 	if (file == NULL) {
 		printf("Error opening highscore file\nYour score was %d\n", score);
 		return 1;
@@ -307,7 +308,7 @@ int main(int argc, char* argv[]) {
 	int hs = getw(file);
 	if (score > hs) {// Write the new score to the file if is new high score
 		fclose(file);
-		file = fopen(strcat(path, HIGHSCORE_FILE), "w");
+		file = fopen(path, "w");
 		if (file == NULL) {
 			printf("Error opening high score file for writing.\n");
 		}
