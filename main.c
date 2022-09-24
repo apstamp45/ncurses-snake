@@ -11,7 +11,7 @@
 #define STARTING_SPEED 4
 #define WINDOW_HEIGHT 20
 #define WINDOW_WIDTH 20
-#define HIGHSCORE_FILE "ncsnake_highscore"
+#define HIGHSCORE_FILE "snake.hs"
 #define TITLE " ___\n/   \\            |\n|       __  ___  |     __\n \\-\\  |/  \\  __\\ | /  /__\\\n    | |   | /  | |/\\  |\n\\___/ |   | \\__| |  \\ \\__/\n"
 #define TITLE_HEIGHT 6
 #define TITLE_WIDTH 26
