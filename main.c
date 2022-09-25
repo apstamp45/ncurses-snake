@@ -11,7 +11,7 @@
 #define STARTING_SPEED 4
 #define WINDOW_HEIGHT 20
 #define WINDOW_WIDTH 20
-#define HIGHSCORE_FILE "snake.hs"
+#define HIGHSCORE_FILE "/etc/snake.hs"
 #define TITLE " ___\n/   \\            |\n|       __  ___  |     __\n \\-\\  |/  \\  __\\ | /  /__\\\n    | |   | /  | |/\\  |\n\\___/ |   | \\__| |  \\ \\__/\n"
 #define TITLE_HEIGHT 6
 #define TITLE_WIDTH 26
@@ -284,33 +284,20 @@ int main(int argc, char* argv[]) {
 		printf("Error closing key handler thread");
 		return 1;
 	}
-	// Get relative path of executable
-	char path[256];
-	readlink("/proc/self/exe", path, 256);// Get path of executable
-	i = 0;
-	for (int add = 1; true; i += add) {// Get index of last '/' char
-		if (path[i] == '\0') {
-			add = -1;
-		}
-		if (add == -1 && path[i] == '/') {
-			break;
-		}
-	}
-	path[i + 1] = '\0';// Terminate the string after the '/'
 	// Check high score, and update if needed
 	int score = s.tc - STARTING_LENGTH;
-	FILE* file = fopen(strcat(path, HIGHSCORE_FILE), "r");
-	printf("%s", path);
+	FILE* file = fopen(HIGHSCORE_FILE, "r");
 	if (file == NULL) {
-		printf("Error opening highscore file\nYour score was %d\n", score);
+		printf("Error opening highscore file (should be located at %s)\nYour score was %d\n", HIGHSCORE_FILE, score);
 		return 1;
 	}
 	int hs = getw(file);
 	if (score > hs) {// Write the new score to the file if is new high score
 		fclose(file);
-		file = fopen(path, "w");
+		file = fopen(HIGHSCORE_FILE, "w");
 		if (file == NULL) {
-			printf("Error opening high score file for writing.\n");
+			printf("Error opening high score file for writing (error with file permissions?).\n");
+			return 1;
 		}
 		putw(score, file);
 		printf("%d! New high score!\n", score);
