@@ -281,8 +281,7 @@ int main(int argc, char* argv[]) {
 	curs_set(mode);
 	endwin();
 	if (pthread_cancel(key)) {
-		printf("Error closing key handler thread");
-		return 1;
+		printf("WARNING: Error closing key handler thread\n");
 	}
 	// Check high score, and update if needed
 	int score = s.tc - STARTING_LENGTH;

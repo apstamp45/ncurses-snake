@@ -7,8 +7,8 @@ OUT=snake
 all: compile
 
 compile: main.c
-	$(CC) $(CFLAGS) -O$(OL) -o $(OUT) $^
-	$(CC) $(CFLAGS) -g -o $(OUT)-debug $^
+	$(CC) -O$(OL) -o $(OUT) $^ $(CFLAGS)
+	$(CC) -g -o $(OUT)-debug $^ $(CFLAGS)
 
 run:
 	./$(OUT) $(RFLAGS)
