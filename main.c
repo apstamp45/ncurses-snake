@@ -180,10 +180,10 @@ int main(int argc, char* argv[]) {
 		starty = (maxy - WINDOW_HEIGHT) / 2;
 	}
 	startx = (getmaxx(w) / 2 - WINDOW_WIDTH) / 2;
-	if (getmaxy(w) < WINDOW_HEIGHT || getmaxx(w) / 2 < WINDOW_WIDTH) {
+	if (getmaxy(w) < WINDOW_HEIGHT + 2 || getmaxx(w) / 2 < WINDOW_WIDTH + 2) {
 		curs_set(mode);
 		endwin();
-		printf("Terminal size is too small.\nResize to at least %d rows by %d columns.\n", WINDOW_HEIGHT, WINDOW_WIDTH);
+		printf("Terminal size is too small.\nResize to at least %d rows by %d columns.\n", WINDOW_HEIGHT + 2, WINDOW_WIDTH + 2);
 		return 0;
 	}
 	clear();
