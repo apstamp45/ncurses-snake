@@ -186,6 +186,7 @@ int main(int argc, char* argv[]) {
 		printf("Terminal size is too small.\nResize to at least %d rows by %d columns.\n", WINDOW_HEIGHT, WINDOW_WIDTH);
 		return 0;
 	}
+	refresh();
 	// Init snake and apple
 	s.h.x = WINDOW_WIDTH / 2;
 	s.h.y = WINDOW_HEIGHT / 2;
@@ -223,6 +224,7 @@ int main(int argc, char* argv[]) {
 	if (pthread_create(&key, NULL, &handlekeys, NULL) != 0) {
 		return 1;
 	}
+	refresh();
 	mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
 	while (isrunning) {
 		int collision = checkforcollision();

@@ -9,5 +9,5 @@ To install, clone the reposotory and run install.sh with root privelages (needed
 
 # Known issues
 
-When the game starts, random characters will sometimes appear.
+When the game starts, random characters will sometimes appear (Hopefully fixed).
 When the window is too small but no error is thrown, the border will be drawn incorrectly.
