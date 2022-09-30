@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 		printf("Terminal size is too small.\nResize to at least %d rows by %d columns.\n", WINDOW_HEIGHT, WINDOW_WIDTH);
 		return 0;
 	}
-	refresh();
+	clear();
 	// Init snake and apple
 	s.h.x = WINDOW_WIDTH / 2;
 	s.h.y = WINDOW_HEIGHT / 2;
