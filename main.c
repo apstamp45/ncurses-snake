@@ -153,6 +153,7 @@ void* handlekeys() {
 
 void init() {
 	srand(time(NULL));
+	isrunning = 1;
 	speed = STARTING_SPEED;
 	// Init window
 	WINDOW* w = initscr();
@@ -223,7 +224,6 @@ void init() {
 }
 
 void loop() {
-	isrunning = 1;
 	while (isrunning) {
 		int collision = checkforcollision();
 		if (collision == 1) {// If the snake crashes into itself
