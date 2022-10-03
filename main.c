@@ -15,36 +15,29 @@
 #define TITLE " ___\n/   \\            |\n|       __  ___  |     __\n \\-\\  |/  \\  __\\ | /  /__\\\n    | |   | /  | |/\\  |\n\\___/ |   | \\__| |  \\ \\__/\n"
 #define TITLE_HEIGHT 6
 #define TITLE_WIDTH 26
+#define EXIT_KEY 113 // Q
 
 struct segment {
 	int x;
 	int y;
 } typedef segment;
 
-struct head {
-	int x;
-	int y;
-	segment movementvector; // For storing the snake's direction
-} typedef head;
-
 struct snake {
-	head h;
+	segment h;
+	segment mv; // For storing the snake's direction
 	segment* t;
 	int tc;
 } typedef snake;
-
-struct apple {
-	int x;
-	int y;
-} typedef apple;
 
 bool isrunning;
 int lastkey;
 int speed;
 int starty;
 int startx;
+int mode; // Stores initial cursor mode
+pthread_t keyhandler;
 snake s;
-apple a;
+segment a;
 
 // Returns num if min <= x < max,
 // else min if x < min, or max - 1 if x >= max
@@ -86,8 +79,8 @@ void movesnake() {
 	s.t[0].x = s.h.x;
 	s.t[0].y = s.h.y;
 	// Shift the head's position
-	s.h.x += s.h.movementvector.x;
-	s.h.y += s.h.movementvector.y;
+	s.h.x += s.mv.x;
+	s.h.y += s.mv.y;
 	// Warp the head if out of bounds
 	if (s.h.y >= WINDOW_HEIGHT) {
 		s.h.y = 0;
@@ -151,16 +144,15 @@ void moveapple() {
 void* handlekeys() {
 	while (isrunning) {
 		lastkey = getch();
-		if (lastkey == 113) {
+		if (lastkey == EXIT_KEY) {
 			break;
 		}
 	}
 	pthread_exit(NULL);
 }
 
-int main(int argc, char* argv[]) {
+void init() {
 	srand(time(NULL));
-	isrunning = 1;
 	speed = STARTING_SPEED;
 	// Init window
 	WINDOW* w = initscr();
@@ -184,14 +176,13 @@ int main(int argc, char* argv[]) {
 		curs_set(mode);
 		endwin();
 		printf("Terminal size is too small.\nResize to at least %d rows by %d columns.\n", WINDOW_HEIGHT + 2, WINDOW_WIDTH + 2);
-		return 0;
+		exit(0);
 	}
-	clear();
 	// Init snake and apple
 	s.h.x = WINDOW_WIDTH / 2;
 	s.h.y = WINDOW_HEIGHT / 2;
-	s.h.movementvector.x = 1;
-	s.h.movementvector.y = 0;
+	s.mv.x = 1;
+	s.mv.y = 0;
 	s.tc = 0;
 	s.t = malloc(sizeof(segment) * (STARTING_LENGTH + 1));
 	for (int i = 0; i < STARTING_LENGTH + 1; i++) {
@@ -201,6 +192,7 @@ int main(int argc, char* argv[]) {
 	}
 	s.tc--;
 	moveapple();
+	refresh();
 	for (int i = 0; i < s.tc; i++) {
 		drawsquare(s.t[i].y, s.t[i].x, 1);
 	}
@@ -220,12 +212,18 @@ int main(int argc, char* argv[]) {
 				  startx * 2 + ((WINDOW_WIDTH * 2 - TITLE_WIDTH) / 2));
 	}
 	// Start key handler
-	pthread_t key;
-	if (pthread_create(&key, NULL, &handlekeys, NULL) != 0) {
-		return 1;
+	if (pthread_create(&keyhandler, NULL, &handlekeys, NULL) != 0) {
+		curs_set(mode);
+		endwin();
+		printf("Error creating key handler\n");
+		exit(1);
 	}
 	refresh();
 	mvprintw(0, 0, "Score: %d", s.tc - STARTING_LENGTH);
+}
+
+void loop() {
+	isrunning = 1;
 	while (isrunning) {
 		int collision = checkforcollision();
 		if (collision == 1) {// If the snake crashes into itself
@@ -245,33 +243,33 @@ int main(int argc, char* argv[]) {
 		switch (lastkey) {
 			case 107: // K
 			case KEY_UP:
-				if (s.h.movementvector.y != 1) {
-					s.h.movementvector.y = -1;
-					s.h.movementvector.x = 0;
+				if (s.mv.y != 1) {
+					s.mv.y = -1;
+					s.mv.x = 0;
 				}
 				break;
 			case 106: // J
 			case KEY_DOWN:
-				if (s.h.movementvector.y != -1) {
-					s.h.movementvector.y = 1;
-					s.h.movementvector.x = 0;
+				if (s.mv.y != -1) {
+					s.mv.y = 1;
+					s.mv.x = 0;
 				}
 				break;
 			case 104: // H
 			case KEY_LEFT:
-				if (s.h.movementvector.x != 1) {
-					s.h.movementvector.x = -1;
-					s.h.movementvector.y = 0;
+				if (s.mv.x != 1) {
+					s.mv.x = -1;
+					s.mv.y = 0;
 				}
 				break;
 			case 108: // L
 			case KEY_RIGHT:
-				if (s.h.movementvector.x != -1) {
-					s.h.movementvector.x = 1;
-					s.h.movementvector.y = 0;
+				if (s.mv.x != -1) {
+					s.mv.x = 1;
+					s.mv.y = 0;
 				}
 				break;
-			case 113: // Q
+			case EXIT_KEY:
 				isrunning = 0;
 				break;
 			case 0: // Nothing
@@ -280,9 +278,12 @@ int main(int argc, char* argv[]) {
 		movesnake();
 		lastkey = 0;
 	}
+}
+
+void end() {
 	curs_set(mode);
 	endwin();
-	if (pthread_cancel(key)) {
+	if (pthread_cancel(keyhandler)) {
 		printf("WARNING: Error closing key handler thread\n");
 	}
 	// Check high score, and update if needed
@@ -290,7 +291,7 @@ int main(int argc, char* argv[]) {
 	FILE* file = fopen(HIGHSCORE_FILE, "r");
 	if (file == NULL) {
 		printf("Error opening highscore file (should be located at %s)\nYour score was %d\n", HIGHSCORE_FILE, score);
-		return 1;
+		exit(1);
 	}
 	int hs = getw(file);
 	if (score > hs) {// Write the new score to the file if is new high score
@@ -298,7 +299,7 @@ int main(int argc, char* argv[]) {
 		file = fopen(HIGHSCORE_FILE, "w");
 		if (file == NULL) {
 			printf("Error opening high score file for writing (error with file permissions?).\n");
-			return 1;
+			exit(1);
 		}
 		putw(score, file);
 		printf("%d! New high score!\n", score);
@@ -307,5 +308,11 @@ int main(int argc, char* argv[]) {
 	}
 	fclose(file);
 	free(s.t);
+}
+
+int main(int argc, char* argv[]) {
+	init();
+	loop();
+	end();
 	return 0;
 }
