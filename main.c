@@ -158,7 +158,7 @@ void init() {
 	// Init window
 	WINDOW* w = initscr();
 	noecho();
-	int mode = curs_set(0);
+	mode = curs_set(0);
 	cbreak();
 	keypad(w, true);
 	start_color();
